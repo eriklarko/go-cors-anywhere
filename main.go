@@ -34,6 +34,8 @@ func httpHandler(res http.ResponseWriter, req *http.Request) {
 
 	httputil.NewSingleHostReverseProxy(urlToForwardTo).
 		ServeHTTP(res, req)
+
+	addCORSHeaders(res.Header(), req)
 }
 
 func getURLToForwardTo(req *http.Request) (*url.URL, error) {
@@ -81,4 +83,44 @@ func addProtocolIfNotPresent(protocol, url string) string {
 	} else {
 		return fmt.Sprintf("%s://%s", protocol, url)
 	}
+}
+
+func addCORSHeaders(responseHeaders http.Header, req *http.Request) {
+	// req is the request from the client
+
+	// delete CORS headers set by the server we're proxying
+	for headerName := range responseHeaders {
+		if isAccessControlHeader(headerName) {
+			responseHeaders.Del(headerName)
+		}
+	}
+
+	// expose headers so that the browser allows the client to read them
+	for headerName := range responseHeaders {
+		if !isAccessControlHeader(headerName) {
+			responseHeaders.Add("Access-Control-Expose-Headers", headerName)
+		}
+	}
+
+	// allow requests from any origin. this could be better
+	responseHeaders.Set("Access-Control-Allow-Origin", "*")
+
+	// add allow-methods if methods aare specified by the client request
+	if method := req.Header.Get("Access-Control-Request-Method"); method != "" {
+		responseHeaders.Set("Access-Control-Allow-Methods", method)
+	}
+
+	// add allow-headers if headers are specified by the client request
+	if headers := req.Header.Values("Access-Control-Request-Headers"); len(headers) > 0 {
+		for _, header := range headers {
+			responseHeaders.Add("Access-Control-Allow-Headers", header)
+		}
+	}
+}
+
+func isAccessControlHeader(headerName string) bool {
+	return strings.HasPrefix(
+		strings.ToLower(headerName),
+		"access-control-",
+	)
 }
