@@ -18,7 +18,7 @@ func TestGetURLToForwardTo(t *testing.T) {
 	}{
 		"only host name": {
 			url:      "foo.com",
-			expected: "foo.com",
+			expected: "http://foo.com",
 		},
 		"with protocol and port": {
 			url:      "http://foo.com:1337",
@@ -30,7 +30,15 @@ func TestGetURLToForwardTo(t *testing.T) {
 		},
 		"with port": {
 			url:      "foo.com:1337",
-			expected: "foo.com:1337",
+			expected: "http://foo.com:1337",
+		},
+		"adds https if port 443": {
+			url:      "foo.com:443",
+			expected: "https://foo.com:443",
+		},
+		"overwrites protocol if port 443": {
+			url:      "http://foo.com:443",
+			expected: "https://foo.com:443",
 		},
 	}
 

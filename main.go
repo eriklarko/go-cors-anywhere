@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -49,5 +50,35 @@ func getURLToForwardTo(req *http.Request) (*url.URL, error) {
 	// to forward to.
 
 	rawURL := strings.TrimPrefix(req.URL.Path, "/")
-	return url.Parse(rawURL)
+
+	// golang's url.Parse doesn't work great if the URL passed to it
+	// doesn't include a protocol. To work around this we add "http" if the URL
+	// doesn't appear to have a protocol.
+	rawURLWithProtocol := addProtocolIfNotPresent("http", rawURL)
+
+	url, err := url.Parse(rawURLWithProtocol)
+
+	// We want to ensure https if the port is 443
+	if url.Port() == "443" {
+		url.Scheme = "https"
+	}
+
+	return url, err
+}
+
+func addProtocolIfNotPresent(protocol, url string) string {
+	// matches strings starting with at least one alphanumeric
+	// character followed by "://"
+	//
+	// this variable could be moved out of this function but until I'm able to
+	// measure the performance implications of compiling the regex on every
+	// request it makes more sense to keep cohesion strong strong rather than
+	// guess at where the performance bottlenecks will be
+	hasProtocol := regexp.MustCompile(`^[[:alpha:]]+://`)
+
+	if hasProtocol.MatchString(url) {
+		return url
+	} else {
+		return fmt.Sprintf("%s://%s", protocol, url)
+	}
 }
