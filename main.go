@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 )
 
 func main() {
@@ -21,6 +23,13 @@ func main() {
 	}
 }
 
-func httpHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "hello")
+func httpHandler(res http.ResponseWriter, req *http.Request) {
+	urlToForwardTo, err := url.Parse("https://icanhazip.com")
+	if err != nil {
+		fmt.Fprintf(res, "unable to parse URL: %v", err)
+		return
+	}
+
+	httputil.NewSingleHostReverseProxy(urlToForwardTo).
+		ServeHTTP(res, req)
 }
