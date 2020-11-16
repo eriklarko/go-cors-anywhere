@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetURLToForwardTo(t *testing.T) {
@@ -50,10 +51,10 @@ func TestGetURLToForwardTo(t *testing.T) {
 				"GET", fmt.Sprintf("%s/%s", serverURL, testCase.url),
 				nil,
 			)
-			assert.NoError(t, err, "failed creating test request")
+			require.NoError(t, err, "failed creating test request")
 
 			actual, err := getURLToForwardTo(req)
-			assert.NoError(t, err, "unable to read URL to forward to from test request")
+			require.NoError(t, err, "unable to read URL to forward to from test request")
 
 			assert.Equal(t, testCase.expected, actual.String())
 		})
@@ -126,7 +127,7 @@ func TestCORSHeadersAdded(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			req, err := http.NewRequest("GET", "foo.bar", nil)
-			assert.NoError(t, err, "failed creating test request")
+			require.NoError(t, err, "failed creating test request")
 
 			// add headers to incoming request
 			req.Header = testCase.clientRequestHeaders

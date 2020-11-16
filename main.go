@@ -39,7 +39,7 @@ func httpHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func getURLToForwardTo(req *http.Request) (*url.URL, error) {
-	// We expect request in the format
+	// We expect requests in the format
 	//   protocol://host:port/url-to-foward to
 	// where url-to-foward to can be (non-exhaustive)
 	//   * google.com
@@ -50,7 +50,6 @@ func getURLToForwardTo(req *http.Request) (*url.URL, error) {
 	// then `req.URL.Path` is the string "/hello", so we simply
 	// take the `req.URL.Path` without the first slash to be the URL
 	// to forward to.
-
 	rawURL := strings.TrimPrefix(req.URL.Path, "/")
 
 	// golang's url.Parse doesn't work great if the URL passed to it
@@ -59,13 +58,16 @@ func getURLToForwardTo(req *http.Request) (*url.URL, error) {
 	rawURLWithProtocol := addProtocolIfNotPresent("http", rawURL)
 
 	url, err := url.Parse(rawURLWithProtocol)
+	if err != nil {
+		return nil, err
+	}
 
 	// We want to ensure https if the port is 443
 	if url.Port() == "443" {
 		url.Scheme = "https"
 	}
 
-	return url, err
+	return url, nil
 }
 
 func addProtocolIfNotPresent(protocol, url string) string {
@@ -74,8 +76,8 @@ func addProtocolIfNotPresent(protocol, url string) string {
 	//
 	// this variable could be moved out of this function but until I'm able to
 	// measure the performance implications of compiling the regex on every
-	// request it makes more sense to keep cohesion strong strong rather than
-	// guess at where the performance bottlenecks will be
+	// request it makes more sense to keep cohesion strong rather than guess
+	// where the performance bottlenecks will be
 	hasProtocol := regexp.MustCompile(`^[[:alpha:]]+://`)
 
 	if hasProtocol.MatchString(url) {
